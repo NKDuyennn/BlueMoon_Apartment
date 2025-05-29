@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}Quản lý tài khoản{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="/static/css/taikhoan.css">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Quản lý tài khoản</h1>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    
+    <div class="search-container">
+        <input type="text" id="searchInput" class="search-box" placeholder="Tìm kiếm ...">
+        <button class="add-button" onclick="openAddModal()">+ Thêm tài khoản</button>
+    </div>
+
+
+    <div class="card">
+        <table class="account-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Username</th>
+                    <th>Họ tên</th>
+                    <th>Vai trò</th>
+                    <th class="action-column">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for account in accounts %}
+                <tr>
+                    <td>{{ account.id }}</td>
+                    <td>{{ account.username }}</td>
+                    <td>{{ account.hoTen }}</td>
+                    <td>{{ account.vaiTro }}</td>
+                    <td class="action-column">
+                        <button class="action-button" onclick="editAccount({{ account.id }})">
+                            <i class="fas fa-edit action-icon"></i>
+                        </button>
+                        <button class="action-button" onclick="deleteAccount({{ account.id }})">
+                            <i class="fas fa-trash-alt action-icon"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Add Account Modal -->
+<div id="addAccountModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeAddModal()">×</span>
+        <h2>Thêm tài khoản mới</h2>
+        <form id="addAccountForm">
+            <div class="form-group">
+                <label for="username">Tên đăng nhập</label>
+                <input type="text" class="form-control" id="username" name="username" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Mật khẩu</label>
+                <input type="password" class="form-control" id="password" name="password" required>
+            </div>
+            <div class="form-group">
+                <label for="hoTen">Họ và tên</label>
+                <input type="text" class="form-control" id="hoTen" name="hoTen" required>
+            </div>
+            <div class="form-group">
+                <label for="vaiTro">Vai trò</label>
+                <select class="form-control" id="vaiTro" name="vaiTro" required>
+                    <option value="">-- Chọn vai trò --</option>
+                    <option value="admin">Admin</option>
+                    <option value="Tổ phó">Tổ phó</option>
+                    <option value="Kế toán">Kế toán</option>
+                </select>
+            </div>
+            <button type="submit" class="btn-submit">Thêm tài khoản</button>
+        </form>
+    </div>
+</div>
+
+<!-- Edit Account Modal -->
+<div id="editAccountModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeEditModal()">×</span>
+        <h2>Chỉnh sửa tài khoản</h2>
+        <form id="editAccountForm">
+            <input type="hidden" id="editAccountId" name="id">
+            <div class="form-group">
+                <label for="editUsername">Tên đăng nhập</label>
+                <input type="text" class="form-control" id="editUsername" disabled>
+            </div>
+            <div class="form-group">
+                <label for="editHoTen">Họ và tên</label>
+                <input type="text" class="form-control" id="editHoTen" name="hoTen" required>
+            </div>
+            <div class="form-group">
+                <label for="editVaiTro">Vai trò</label>
+                <select class="form-control" id="editVaiTro" name="vaiTro" required>
+                    <option value="">-- Chọn vai trò --</option>
+                    <option value="admin">Admin</option>
+                    <option value="Tổ phó">Tổ phó</option>
+                    <option value="Kế toán">Kế toán</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="editPassword">Mật khẩu mới (để trống nếu không thay đổi)</label>
+                <input type="password" class="form-control" id="editPassword" name="password">
+            </div>
+            <button type="submit" class="btn-submit">Cập nhật tài khoản</button>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/taikhoan.js') }}"></script>
+{% endblock %}

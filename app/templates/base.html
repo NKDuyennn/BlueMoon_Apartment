@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}BlueMoon Apartment{% endblock %}</title>
+    <link rel="stylesheet" href="/static/css/base.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="container">
+        <!-- Left Sidebar -->
+        <div class="sidebar">
+            <div class="logo">
+                <img src="/static/images/apartment_white.png" alt="BlueMoon">
+                <div class="logo-text"><span class="library-text">BLUEMOON</span></div>
+            </div>
+            
+            <nav class="sidebar-menu">
+                <ul>
+                    <!-- Trang chủ: Hiển thị cho mọi vai trò -->
+                    <li>
+                        <a href="{{ url_for('auth.home') }}" class="menu-item {% if request.endpoint == 'auth.home' %}active{% endif %}">
+                            <i class="fas fa-th-large"></i>
+                            <span>Trang chủ</span>
+                        </a>
+                    </li>
+
+                    {% if current_user.vaiTro == 'admin' %}
+                        <!-- Admin (Tổ trưởng) -->
+                        <li>
+                            <a href="{{ url_for('user.taikhoan') }}" class="menu-item {% if request.endpoint == 'user.taikhoan' %}active{% endif %}">
+                                <i class="fas fa-user"></i>
+                                <span>Tài khoản</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ url_for('hk.hokhau') }}" class="menu-item {% if request.endpoint == 'hk.hokhau' %}active{% endif %}">
+                                <i class="fas fa-house"></i>
+                                <span>Hộ khẩu</span>
+                            </a>
+                        </li>
+                        
+                        <li>
+                            <a href="{{ url_for('hk.tamtrutamvang') }}" class="menu-item {% if request.endpoint == 'hk.tamtrutamvang' %}active{% endif %}">
+                                <i class="fas fa-user-clock"></i>
+                                <span>Tạm trú/vắng</span>
+                            </a>
+                        </li>
+
+                        <li>
+                            <a href="{{ url_for('hk.lichsuhokhau') }}" class="menu-item {% if request.endpoint == 'hk.lichsuhokhau' %}active{% endif %}">
+                                <i class="fas fa-history"></i>
+                                <span>Lịch sử</span>
+                            </a>
+                        </li>
+                    {% elif current_user.vaiTro == 'Tổ phó' %}
+                        <!-- Tổ phó -->
+                        <li>
+                            <a href="{{ url_for('hk.hokhau') }}" class="menu-item {% if request.endpoint == 'hk.hokhau' %}active{% endif %}">
+                                <i class="fas fa-house"></i>
+                                <span>Hộ khẩu</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ url_for('hk.tamtrutamvang') }}" class="menu-item {% if request.endpoint == 'hk.tamtrutamvang' %}active{% endif %}">
+                                <i class="fas fa-user-clock"></i>
+                                <span>Tạm trú/vắng</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ url_for('hk.lichsuhokhau') }}" class="menu-item {% if request.endpoint == 'hk.lichsuhokhau' %}active{% endif %}">
+                                <i class="fas fa-history"></i>
+                                <span>Lịch sử</span>
+                            </a>
+                        </li>
+                    {% elif current_user.vaiTro == 'Kế toán' %}
+                        <!-- Kế toán -->
+                        <li>
+                            <a href="{{ url_for('tp.khoanthu') }}" class="menu-item {% if request.endpoint == 'tp.khoanthu' %}active{% endif %}">
+                                <i class="fas fa-money-bill-wave"></i>
+                                <span>Khoản thu</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ url_for('tp.dotthu') }}" class="menu-item {% if request.endpoint == 'tp.khoanthu' %}active{% endif %}">
+                                <i class="fas fa-calendar-check"></i>
+                                <span>Đợt thu</span>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <a href="{{ url_for('auth.logout') }}" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Log Out</span>
+                </a>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Top Header Bar -->
+            <header class="top-header">
+                <div class="user-info">
+                    <div class="user-avatar">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                    <div class="user-details">
+                        <div class="user-name">{{ current_user.hoTen if current_user else 'KháchKhách' }}</div>
+                        <div class="user-role">{{ current_user.vaiTro if current_user else '' }}</div>
+                    </div>
+                </div>
+                
+                <div class="header-right">
+                    <div class="datetime">
+                        <span class="time">{{ current_time }}</span>
+                        <span class="date">{{ current_date }}</span>
+                    </div>
+                    <div class="settings">
+                        <a href="#">
+                            <i class="fas fa-cog"></i>
+                        </a>
+                    </div>
+                </div>
+            </header>
+            
+            <!-- Page Content -->
+            <div class="content">
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='js/base.js') }}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

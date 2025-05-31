@@ -1,0 +1,822 @@
+{% extends "base.html" %}
+{% block title %}Đợt thu - {{ dotthu.tenDotThu }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="/static/css/dotthu.css">
+<style>
+    .modal-content { max-width: 600px; }
+    .table-editable td.editable:hover { background-color: #f0f0f0; cursor: pointer; }
+    .table-editable td.editable input { width: 100%; box-sizing: border-box; }
+    .action-buttons { display: flex; gap: 10px; align-items: center; }
+    .khoanthu-list, .hokhau-list { max-height: 300px; overflow-y: auto; }
+    .nopphi-table th, .nopphi-table td { text-align: center; vertical-align: middle; }
+    .nopphi-table th { background-color: #e9ecef; }
+    .nopphi-table td.editable { padding: 5px; }
+    .checkbox-list { list-style: none; padding: 0; }
+    .checkbox-list li { padding: 8px 0; border-bottom: 1px solid #eee; }
+    .checkbox-list li:last-child { border-bottom: none; }
+    .checkbox-list input[type="checkbox"] { margin-right: 10px; }
+    .checkbox-list label { display: inline-block; width: 90%; cursor: pointer; }
+    .search-box { margin-bottom: 15px; width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+    .card-header { 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center; 
+        cursor: pointer; 
+        padding: 10px;
+    }
+    .card-header h2 { 
+        margin: 0; 
+        font-size: 1.5rem; 
+    }
+    .card-body.collapsible { display: none; }
+    .card-body.collapsible.active { display: block; }
+    .nopphi-table-container { overflow-x: auto; }
+    .total-row { 
+        font-weight: bold; 
+        background-color: #f5f5f5; 
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div id="dotThuInfo" style="display: none;" data-ma-dot-thu="{{ dotthu.maDotThu }}"></div>
+
+    <h1>Đợt thu - {{ dotthu.tenDotThu }}</h1>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Thông tin đợt thu -->
+    <div class="card">
+        <div class="card-header">
+            <h2>Thông tin đợt thu</h2>
+            {% if current_user.vaiTro == 'Kế toán' %}
+            <div class="action-buttons">
+                <button class="btn-edit" onclick="openEditDotThuModal()">Chỉnh sửa</button>
+                <button class="btn-delete" onclick="openDeleteDotThuModal()">Xóa</button>
+            </div>
+            {% endif %}
+        </div>
+        <div class="card-body info-grid">
+            <div class="info-column">
+                <p><strong>Mã đợt thu:</strong> {{ dotthu.maDotThu }}</p>
+                <p><strong>Tên đợt thu:</strong> {{ dotthu.tenDotThu }}</p>
+            </div>
+            <div class="info-column">
+                <p><strong>Ngày bắt đầu:</strong> {{ dotthu.ngayBatDau }}</p>
+                <p><strong>Ngày kết thúc:</strong> {{ dotthu.ngayKetThuc }}</p>
+            </div>
+            <div class="info-column">
+                <p><strong>Trạng thái:</strong> {{ dotthu.trangThai }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quản lý khoản thu -->
+    <div class="card mt-4">
+        <div class="card-header" onclick="toggleCollapse('khoanThuBody')">
+            <h2>Danh sách khoản thu</h2>
+            {% if current_user.vaiTro == 'Kế toán' %}
+            <div class="action-buttons">
+                <button class="add-button" onclick="openEditKhoanThuModal(); event.stopPropagation();">Chỉnh sửa khoản thu</button>
+            </div>
+            {% endif %}
+        </div>
+        <div class="card-body collapsible" id="khoanThuBody">
+            <table class="account-table">
+                <thead>
+                    <tr>
+                        <th>Mã khoản thu</th>
+                        <th>Tên khoản thu</th>
+                        <th>Loại khoản thu</th>
+                        <th>Số tiền</th>
+                        {% if current_user.vaiTro == 'Kế toán' %}
+                        <th>Hành động</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for kt in khoanthus %}
+                    <tr>
+                        <td>{{ kt.khoanthu.maKhoanThu }}</td>
+                        <td>{{ kt.khoanthu.tenKhoanThu }}</td>
+                        <td>{{ kt.khoanthu.loaiKhoanThu }}</td>
+                        <td>{{ kt.khoanthu.soTien }} {{ kt.khoanthu.loaiSoTien }}</td>
+                        {% if current_user.vaiTro == 'Kế toán' %}
+                        <td>
+                            <button class="btn-delete" onclick="removeKhoanThu({{ kt.idKhoanThuDotThu }})">Xóa</button>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Quản lý hộ khẩu -->
+    <div class="card mt-4">
+        <div class="card-header" onclick="toggleCollapse('hoKhauBody')">
+            <h2>Danh sách hộ khẩu</h2>
+            {% if current_user.vaiTro == 'Kế toán' %}
+            <div class="action-buttons">
+                <button class="add-button" onclick="openEditHoKhauModal(); event.stopPropagation();">Chỉnh sửa hộ khẩu</button>
+            </div>
+            {% endif %}
+        </div>
+        <div class="card-body collapsible" id="hoKhauBody">
+            <table class="account-table">
+                <thead>
+                    <tr>
+                        <th>Mã hộ khẩu</th>
+                        <th>Số nhà</th>
+                        <th>Chủ hộ</th>
+                        <th>Diện tích (m²)</th>
+                        <th>Số xe máy</th>
+                        <th>Số ô tô</th>
+                        {% if current_user.vaiTro == 'Kế toán' %}
+                        <th>Hành động</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for detail in nopphi_details %}
+                    <tr>
+                        <td>{{ detail.maHoKhau }}</td>
+                        <td>{{ detail.maHoKhau | get_hokhau_so_nha }}</td>
+                        <td>{{ detail.maHoKhau | get_chu_ho }}</td>
+                        <td>{{ detail.maHoKhau | get_hokhau_dien_tich }}</td>
+                        <td>{{ detail.maHoKhau | get_hokhau_xe_may }}</td>
+                        <td>{{ detail.maHoKhau | get_hokhau_o_to }}</td>
+                        {% if current_user.vaiTro == 'Kế toán' %}
+                        <td>
+                            <button class="btn-delete" onclick="removeHoKhau({{ detail.maHoKhau }})">Xóa</button>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Bảng nộp phí -->
+    <div class="card mt-4">
+        <div class="card-header">
+            <h2>Bảng nộp phí</h2>
+            {% if current_user.vaiTro == 'Kế toán' %}
+            <div class="action-buttons">
+                <button class="add-button edit-table-button" onclick="toggleEditMode()">Chỉnh sửa bảng</button>
+            </div>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            <div class="nopphi-table-container">
+                <!-- Debug dữ liệu để kiểm tra -->
+                {% if debug %}
+                <div style="display: none;">
+                    {% for detail in nopphi_details %}
+                    <p>HoKhau: {{ detail.maHoKhau }} - khoanThus: {{ detail.khoanThus|tojson }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                <table class="nopphi-table table-editable">
+                    <thead>
+                        <tr>
+                            <th rowspan="2">Mã hộ khẩu</th>
+                            {% for kt in khoanthus %}
+                            <th colspan="4">{{ kt.khoanthu.tenKhoanThu }}</th>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            {% for kt in khoanthus %}
+                            <th>Đã nộp</th>
+                            <th>Cần nộp</th>
+                            <th>Ngày thu</th>
+                            <th>Người nộp</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if nopphi_details %}
+                        {% for detail in nopphi_details %}
+                        <tr>
+                            <td>{{ detail.maHoKhau }}</td>
+                            {% for kt in khoanthus %}
+                            {% set kt_data = detail.khoanThus.get(kt.khoanthu.maKhoanThu|string, none) %}
+                            {% if kt_data %}
+                            <td class="editable" data-field="soTienDaNop" data-id="{{ kt_data.IDNopTien }}">
+                                {{ "{:,.1f}".format(kt_data.soTienDaNop) if kt_data.soTienDaNop is not none else '-' }}
+                            </td>
+                            <td>
+                                {{ "{:,.1f}".format(kt_data.soTienCanNop) if kt_data.soTienCanNop is not none else '-' }}
+                            </td>
+                            <td>{{ kt_data.ngayThu | format_date if kt_data.ngayThu else '-' }}</td>
+                            <td class="editable" data-field="nguoiNop" data-id="{{ kt_data.IDNopTien }}">{{ kt_data.nguoiNop }}</td>
+                            {% else %}
+                            <td>-</td>
+                            <td>-</td>
+                            <td>-</td>
+                            <td>-</td>
+                            {% endif %}
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                        <!-- Dòng tổng -->
+                        <tr class="total-row">
+                            <td>Tổng</td>
+                            {% for kt in khoanthus %}
+                            {% set ns = namespace(total_da_nop=0, total_can_nop=0) %}
+                            {% for detail in nopphi_details %}
+                            {% set kt_data = detail.khoanThus.get(kt.khoanthu.maKhoanThu|string, none) %}
+                            {% if kt_data and kt_data.soTienDaNop is defined and kt_data.soTienDaNop is not none %}
+                            {% set ns.total_da_nop = ns.total_da_nop + (kt_data.soTienDaNop|float(0)) %}
+                            {% endif %}
+                            {% if kt_data and kt_data.soTienCanNop is defined and kt_data.soTienCanNop is not none %}
+                            {% set ns.total_can_nop = ns.total_can_nop + (kt_data.soTienCanNop|float(0)) %}
+                            {% endif %}
+                            {% endfor %}
+                            <td>{{ "{:,.1f}".format(ns.total_da_nop|round(2)) }}</td>
+                            <td>{{ "{:,.1f}".format(ns.total_can_nop|round(2)) }}</td>
+                            <td>-</td>
+                            <td>-</td>
+                            {% endfor %}
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="{{ khoanthus|length * 4 + 1 }}">Không có dữ liệu nộp phí</td></tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Modal chỉnh sửa đợt thu -->
+{% if current_user.vaiTro == 'Kế toán' %}
+<div id="editDotThuModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeEditDotThuModal()">×</span>
+        <h2>Chỉnh sửa đợt thu</h2>
+        <form id="editDotThuForm">
+            <input type="hidden" id="maDotThu" name="maDotThu" value="{{ dotthu.maDotThu }}">
+            <div class="form-group">
+                <label for="tenDotThu">Tên đợt thu</label>
+                <input type="text" class="form-control" id="tenDotThu" name="tenDotThu" value="{{ dotthu.tenDotThu }}" required>
+            </div>
+            <div class="form-group">
+                <label for="ngayBatDau">Ngày bắt đầu</label>
+                <input type="date" class="form-control" id="ngayBatDau" name="ngayBatDau" value="{{ dotthu.ngayBatDau | format_date_input }}" required>
+            </div>
+            <div class="form-group">
+                <label for="ngayKetThuc">Ngày kết thúc</label>
+                <input type="date" class="form-control" id="ngayKetThuc" name="ngayKetThuc" value="{{ dotthu.ngayKetThuc | format_date_input }}" required>
+            </div>
+            <div class="form-group">
+                <label for="trangThai">Trạng thái</label>
+                <select class="form-control" id="trangThai" name="trangThai" required>
+                    <option value="Đang thực hiện" {% if dotthu.trangThai == 'Đang thực hiện' %}selected{% endif %}>Đang thực hiện</option>
+                    <option value="Hoàn thành" {% if dotthu.trangThai == 'Hoàn thành' %}selected{% endif %}>Hoàn thành</option>
+                    <option value="Hủy" {% if dotthu.trangThai == 'Hủy' %}selected{% endif %}>Hủy</option>
+                </select>
+            </div>
+            <button type="submit" class="btn-submit">Lưu thay đổi</button>
+        </form>
+    </div>
+</div>
+
+<!-- Modal xóa đợt thu -->
+<div id="deleteDotThuModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeDeleteDotThuModal()">×</span>
+        <h2>Xác nhận xóa</h2>
+        <p>Bạn có chắc chắn muốn xóa đợt thu "{{ dotthu.tenDotThu }}"?</p>
+        <div class="modal-buttons">
+            <button class="btn-cancel" onclick="closeDeleteDotThuModal()">Hủy</button>
+            <button class="btn-delete" onclick="deleteDotThu()">Xóa</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal chỉnh sửa khoản thu -->
+<div id="editKhoanThuModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeEditKhoanThuModal()">×</span>
+        <h2>Chỉnh sửa khoản thu</h2>
+        <input type="text" id="searchKhoanThu" class="search-box" placeholder="Tìm kiếm khoản thu...">
+        <form id="editKhoanThuForm">
+            <div class="khoanthu-list">
+                <ul class="checkbox-list" id="khoanThuCheckboxList">
+                    {% for kt in all_khoanthus %}
+                    <li>
+                        <input type="checkbox" id="kt-{{ kt.maKhoanThu }}" name="selectedKhoanThu" value="{{ kt.maKhoanThu }}" 
+                               {% if kt.maKhoanThu in khoanthus|map(attribute='khoanthu.maKhoanThu') %}checked{% endif %}>
+                        <label for="kt-{{ kt.maKhoanThu }}">{{ kt.tenKhoanThu }} ({{ kt.loaiKhoanThu }}) - {{ kt.soTien }} {{ kt.loaiSoTien }}</label>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <button type="submit" class="btn-submit">Lưu thay đổi</button>
+        </form>
+    </div>
+</div>
+
+<!-- Modal chỉnh sửa hộ khẩu -->
+<div id="editHoKhauModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeEditHoKhauModal()">×</span>
+        <h2>Chỉnh sửa hộ khẩu</h2>
+        <div class="form-group mb-3">
+            <label for="nguoiNopMacDinh">Người nộp mặc định</label>
+            <input type="text" class="form-control" id="nguoiNopMacDinh" name="nguoiNopMacDinh" placeholder="Nhập tên người nộp mặc định">
+        </div>
+        <input type="text" id="searchHoKhau" class="search-box" placeholder="Tìm kiếm hộ khẩu...">
+        <form id="editHoKhauForm">
+            <div class="hokhau-list">
+                <ul class="checkbox-list" id="hoKhauCheckboxList">
+                    {% for hk in hokhaus %}
+                    <li>
+                        <input type="checkbox" id="hk-{{ hk.maHoKhau }}" name="selectedHoKhau" value="{{ hk.maHoKhau }}"
+                               {% if hk.maHoKhau in nopphi_details|map(attribute='maHoKhau') %}checked{% endif %}>
+                        <label for="hk-{{ hk.maHoKhau }}">{{ hk.soNha }} - {{ hk.maHoKhau | get_chu_ho }}</label>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <button type="submit" class="btn-submit">Lưu thay đổi</button>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let editMode = false;
+let originalValues = {};
+
+// Mở các modal
+function openEditDotThuModal() {
+    document.getElementById('editDotThuModal').style.display = 'block';
+}
+
+function closeEditDotThuModal() {
+    document.getElementById('editDotThuModal').style.display = 'none';
+}
+
+function openDeleteDotThuModal() {
+    document.getElementById('deleteDotThuModal').style.display = 'block';
+}
+
+function closeDeleteDotThuModal() {
+    document.getElementById('deleteDotThuModal').style.display = 'none';
+}
+
+function openEditKhoanThuModal() {
+    document.getElementById('editKhoanThuModal').style.display = 'block';
+}
+
+function closeEditKhoanThuModal() {
+    document.getElementById('editKhoanThuModal').style.display = 'none';
+}
+
+function openEditHoKhauModal() {
+    document.getElementById('editHoKhauModal').style.display = 'block';
+}
+
+function closeEditHoKhauModal() {
+    document.getElementById('editHoKhauModal').style.display = 'none';
+}
+
+// Add toggleCollapse function for collapsible tables
+function toggleCollapse(bodyId) {
+    const body = document.getElementById(bodyId);
+    if (body) {
+        body.classList.toggle('active');
+    }
+}
+
+// Lấy mã đợt thu từ template
+function getMaDotThu() {
+    const dotThuElement = document.getElementById('dotThuInfo');
+    if (!dotThuElement || !dotThuElement.dataset.maDotThu) {
+        console.error('Không tìm thấy phần tử dotThuInfo hoặc thuộc tính data-ma-dot-thu');
+        return null;
+    }
+    return dotThuElement.dataset.maDotThu;
+}
+
+// Xóa đợt thu
+function deleteDotThu() {
+    const maDotThu = getMaDotThu();
+    if (!maDotThu) {
+        alert('Không tìm thấy mã đợt thu!');
+        return;
+    }
+
+    fetch(`/dotthu/${maDotThu}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.href = '/dotthu';
+        } else {
+            alert(data.message);
+        }
+    })
+    .catch(error => alert('Lỗi: ' + error));
+}
+
+// Xóa khoản thu khỏi đợt thu
+function removeKhoanThu(idKhoanThuDotThu) {
+    const maDotThu = getMaDotThu();
+    if (!maDotThu) {
+        alert('Không tìm thấy mã đợt thu!');
+        return;
+    }
+
+    if (confirm('Bạn có chắc chắn muốn xóa khoản thu này khỏi đợt thu?')) {
+        fetch(`/dotthu/${maDotThu}/remove_khoanthu/${idKhoanThuDotThu}`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => alert('Lỗi: ' + error));
+    }
+}
+
+// Xóa hộ khẩu khỏi đợt thu
+function removeHoKhau(maHoKhau) {
+    const maDotThu = getMaDotThu();
+    if (!maDotThu) {
+        alert('Không tìm thấy mã đợt thu!');
+        return;
+    }
+
+    if (confirm('Bạn có chắc chắn muốn xóa hộ khẩu này khỏi đợt thu?')) {
+        fetch(`/dotthu/${maDotThu}/remove_hokhau/${maHoKhau}`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => alert('Lỗi: ' + error));
+    }
+}
+
+// Bật/tắt chế độ chỉnh sửa bảng nộp phí
+function toggleEditMode() {
+    editMode = !editMode;
+    const editButton = document.querySelector('.edit-table-button');
+    
+    if (editButton) {
+        editButton.textContent = editMode ? 'Hủy chỉnh sửa' : 'Chỉnh sửa bảng';
+    } else {
+        console.error('Không tìm thấy nút chỉnh sửa bảng');
+    }
+
+    const editableCells = document.querySelectorAll('.table-editable .editable');
+    
+    // Lưu hoặc khôi phục giá trị cho các ô editable
+    editableCells.forEach(cell => {
+        if (editMode) {
+            // Lưu giá trị gốc
+            const value = cell.textContent.trim();
+            originalValues[`${cell.dataset.id}-${cell.dataset.field}`] = value;
+            
+            // Tạo input
+            cell.innerHTML = `<input type="text" value="${value}" />`;
+            
+            // Thêm sự kiện cho input
+            const input = cell.querySelector('input');
+            if (input) {
+                input.addEventListener('blur', function() {
+                    saveCell(this);
+                });
+                
+                // Thêm sự kiện Enter để lưu
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        this.blur();
+                        e.preventDefault();
+                    }
+                });
+            }
+        } else {
+            // Khôi phục lại text từ input nếu đang ở chế độ edit
+            const input = cell.querySelector('input');
+            if (input) {
+                cell.textContent = input.value;
+            }
+        }
+    });
+}
+
+// Lưu giá trị ô đã chỉnh sửa
+function saveCell(input) {
+    const maDotThu = getMaDotThu();
+    if (!maDotThu) {
+        alert('Không tìm thấy mã đợt thu!');
+        return;
+    }
+
+    const cell = input.parentElement;
+    const value = input.value.trim();
+    const field = cell.dataset.field;
+    const id = cell.dataset.id;
+    
+    // Kiểm tra nếu giá trị không thay đổi
+    const originalKey = `${id}-${field}`;
+    if (originalValues[originalKey] === value) {
+        cell.textContent = value;
+        return; // Không cần gửi request nếu không có thay đổi
+    }
+    
+    // Kiểm tra dữ liệu trước khi lưu
+    if (field === 'soTienDaNop' && isNaN(parseFloat(value))) {
+        alert('Số tiền đã nộp phải là một số!');
+        input.value = originalValues[originalKey];
+        input.focus();
+        return;
+    }
+    
+    if (confirm(`Bạn có chắc chắn muốn lưu thay đổi cho trường "${field === 'soTienDaNop' ? 'Số tiền đã nộp' : 'Người nộp'}"?`)) {
+        cell.textContent = value;
+        
+        fetch(`/dotthu/${maDotThu}/update_nopphi/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ [field]: value })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (!data.success) {
+                alert(data.message);
+                location.reload();
+            }
+        })
+        .catch(error => {
+            alert('Lỗi: ' + error);
+            location.reload();
+        });
+    } else {
+        // Nếu không xác nhận, khôi phục giá trị gốc
+        input.value = originalValues[originalKey];
+        cell.textContent = originalValues[originalKey];
+    }
+}
+
+// Hàm tìm kiếm
+function setupSearch(searchInputId, listId) {
+    const searchInput = document.getElementById(searchInputId);
+    const list = document.getElementById(listId);
+    
+    if (!searchInput || !list) return;
+    
+    searchInput.addEventListener('input', function() {
+        const searchValue = this.value.toLowerCase();
+        const items = list.querySelectorAll('li');
+        
+        items.forEach(item => {
+            const text = item.textContent.toLowerCase();
+            if (text.includes(searchValue)) {
+                item.style.display = '';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    });
+}
+
+// Khởi tạo dữ liệu từ template
+function getDataFromTemplate(templateId, defaultValue = []) {
+    const el = document.getElementById(templateId);
+    if (!el || !el.textContent.trim()) return defaultValue;
+    
+    try {
+        return JSON.parse(el.textContent);
+    } catch (e) {
+        console.error('Error parsing template data:', e);
+        return defaultValue;
+    }
+}
+
+// Sự kiện khi document được load
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // Khởi tạo sự kiện click cho các ô editable
+    const editableCells = document.querySelectorAll('.table-editable .editable');
+        editableCells.forEach(cell => {
+            cell.addEventListener('click', function() {
+                if (editMode) {
+                    const currentValue = this.textContent.trim();
+                    this.innerHTML = `<input type="text" value="${currentValue}" />`;
+                    
+                    const input = this.querySelector('input');
+                    if (input) {
+                        input.focus();
+                        
+                        input.addEventListener('blur', function() {
+                            saveCell(this);
+                        });
+                        
+                        input.addEventListener('keydown', function(e) {
+                            if (e.key === 'Enter') {
+                                this.blur();
+                                e.preventDefault();
+                            }
+                        });
+                    }
+                }
+            });
+        });
+
+    // Thiết lập tìm kiếm
+    setupSearch('searchKhoanThu', 'khoanThuCheckboxList');
+    setupSearch('searchHoKhau', 'hoKhauCheckboxList');
+    
+    // Áp dụng người nộp mặc định cho tất cả hộ khẩu được chọn
+    const nguoiNopMacDinhInput = document.getElementById('nguoiNopMacDinh');
+    if (nguoiNopMacDinhInput) {
+        nguoiNopMacDinhInput.addEventListener('blur', function() {
+            const value = this.value.trim();
+            if (value) {
+                const checkedHoKhaus = document.querySelectorAll('#hoKhauCheckboxList input[type="checkbox"]:checked');
+                if (checkedHoKhaus.length > 0 && confirm('Bạn có muốn áp dụng người nộp này cho tất cả hộ khẩu đã chọn?')) {
+                    // Đánh dấu để xử lý khi submit form
+                    const form = document.getElementById('editHoKhauForm');
+                    if (form) {
+                        form.dataset.applyDefaultNguoiNop = value;
+                    }
+                }
+            }
+        });
+    }
+
+    // Form submit handlers Herod
+    const editDotThuForm = document.getElementById('editDotThuForm');
+    if (editDotThuForm) {
+        editDotThuForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const maDotThu = getMaDotThu();
+            if (!maDotThu) {
+                alert('Không tìm thấy mã đợt thu!');
+                return;
+            }
+
+            const formData = new FormData(this);
+            const data = {
+                tenDotThu: formData.get('tenDotThu'),
+                ngayBatDau: formData.get('ngayBatDau'),
+                ngayKetThuc: formData.get('ngayKetThuc'),
+                trangThai: formData.get('trangThai')
+            };
+
+            fetch(`/dotthu/${maDotThu}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(error => alert('Lỗi: ' + error));
+        });
+    }
+
+    // Form xử lý khoản thu
+    const editKhoanThuForm = document.getElementById('editKhoanThuForm');
+    if (editKhoanThuForm) {
+        editKhoanThuForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const maDotThu = getMaDotThu();
+            if (!maDotThu) {
+                alert('Không tìm thấy mã đợt thu!');
+                return;
+            }
+            
+            const selectedKhoanthus = Array.from(
+                document.querySelectorAll('#khoanThuCheckboxList input[type="checkbox"]:checked')
+            ).map(cb => cb.value);
+            
+            if (!confirm('Bạn có chắc chắn muốn lưu thay đổi?')) {
+                return;
+            }
+            
+            fetch(`/dotthu/${maDotThu}/update_khoanthus`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ selectedKhoanThu: selectedKhoanthus })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Có lỗi xảy ra:\n' + data.message);
+                }
+            })
+            .catch(error => alert('Lỗi: ' + error));
+        });
+    }
+
+    // Form xử lý hộ khẩu
+    const editHoKhauForm = document.getElementById('editHoKhauForm');
+    if (editHoKhauForm) {
+        editHoKhauForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const maDotThu = getMaDotThu();
+            if (!maDotThu) {
+                alert('Không tìm thấy mã đợt thu!');
+                return;
+            }
+            
+            const selectedHoKhaus = Array.from(
+                document.querySelectorAll('#hoKhauCheckboxList input[type="checkbox"]:checked')
+            ).map(cb => cb.value);
+            
+            const nguoiNopMacDinh = this.dataset.applyDefaultNguoiNop || '';
+            
+            if (!confirm('Bạn có chắc chắn muốn lưu thay đổi?')) {
+                return;
+            }
+            
+            fetch(`/dotthu/${maDotThu}/update_hokhaus`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    selectedHoKhau: selectedHoKhaus,
+                    nguoiNopMacDinh: nguoiNopMacDinh
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Có lỗi xảy ra:\n' + data.message);
+                }
+            })
+            .catch(error => alert('Lỗi: ' + error));
+        });
+    }
+    
+    // Xử lý sự kiện nhấp chuột bên ngoài modal để đóng
+    window.onclick = function(event) {
+        const modals = document.getElementsByClassName('modal');
+        for (let i = 0; i < modals.length; i++) {
+            if (event.target == modals[i]) {
+                modals[i].style.display = 'none';
+            }
+        }
+    };
+
+    // Thêm template data elements để lưu trữ dữ liệu thay vì dùng Jinja2 arrays
+    if (!document.getElementById('khoanThusData') && document.querySelector('.khoanthu-list')) {
+        const khoanThusDataScript = document.createElement('script');
+        khoanThusDataScript.id = 'khoanThusData';
+        khoanThusDataScript.type = 'application/json';
+        document.body.appendChild(khoanThusDataScript);
+    }
+
+    if (!document.getElementById('hoKhausData') && document.querySelector('.hokhau-list')) {
+        const hoKhausDataScript = document.createElement('script');
+        hoKhausDataScript.id = 'hoKhausData';
+        hoKhausDataScript.type = 'application/json';
+        document.body.appendChild(hoKhausDataScript);
+    }
+});
+</script>
+{% endblock %}

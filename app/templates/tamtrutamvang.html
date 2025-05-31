@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+{% block title %}Tạm trú - tạm vắng{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="/static/css/home.css">
+<link rel="stylesheet" href="/static/css/hokhau.css">
+{% endblock %}
+{% block content %}
+<h1>Tạm trú - tạm vắng</h1>
+<div class="container">
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    {% if current_user.vaiTro == 'admin' %}
+    <div class="search-container">
+        <input type="text" id="searchInput" class="search-box" placeholder="Tìm kiếm ...">
+        <button class="add-button" onclick="openAddModal()">+ Thêm Tạm trú/Tạm vắng</button>
+    </div>
+    {% endif %}
+
+    <div class="card">
+        <table class="account-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Mã Nhân Khẩu</th>
+                    <th>Họ tên</th>
+                    <th>Loại</th>
+                    <th>Ngày Bắt Đầu</th>
+                    <th>Ngày Kết Thúc</th>
+                    <th class="action-column">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tttv in tamtrutamvangs|reverse %}
+                <tr>
+                    <td>{{ tttv.id }}</td>
+                    <td>{{ tttv.maNhanKhau }}</td>
+                    <td>{{ tttv.hoTen }}</td>
+                    <td>{{ tttv.loai }}</td>
+                    <td>{{ tttv.ngayBatDau }}</td>
+                    <td>{{ tttv.ngayKetThuc }}</td>
+                    <td class="action-column">
+                        <button class="action-button" onclick="viewTTTV({{ tttv.id }})">
+                            <i class="fas fa-eye action-icon"></i>
+                        </button>
+                        {% if current_user.vaiTro == 'admin' %}
+                        <button class="action-button" onclick="editTTTV({{ tttv.id }})">
+                            <i class="fas fa-edit action-icon"></i>
+                        </button>
+                        <button class="action-button" onclick="deleteTTTV({{ tttv.id }})">
+                            <i class="fas fa-trash-alt action-icon"></i>
+                        </button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Add TTTV Modal -->
+<div id="addTTTVModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeAddModal()">×</span>
+        <h2>Thêm Tạm trú/Tạm vắng mới</h2>
+        <form id="addTTTVForm">
+            <div class="form-group">
+                <label for="maHoKhau">Mã Hộ Khẩu</label>
+                <select class="form-control" id="maHoKhau" name="maHoKhau" required onchange="loadNhanKhauByHoKhau()">
+                    <option value="">-- Chọn mã hộ khẩu --</option>
+                    {% for hokhau in hokhaus %}
+                        <option value="{{ hokhau.maHoKhau }}">{{ hokhau.maHoKhau }} - {{ hokhau.soNha }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="maNhanKhau">Nhân Khẩu</label>
+                <select class="form-control" id="maNhanKhau" name="maNhanKhau" required>
+                    <option value="">-- Chọn nhân khẩu --</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="loai">Loại</label>
+                <select class="form-control" id="loai" name="loai" required>
+                    <option value="">-- Chọn loại --</option>
+                    <option value="Tạm trú">Tạm trú</option>
+                    <option value="Tạm vắng">Tạm vắng</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="ngayBatDau">Ngày Bắt Đầu</label>
+                <input type="date" class="form-control" id="ngayBatDau" name="ngayBatDau" required>
+            </div>
+            <div class="form-group">
+                <label for="ngayKetThuc">Ngày Kết Thúc</label>
+                <input type="date" class="form-control" id="ngayKetThuc" name="ngayKetThuc" required>
+            </div>
+            <div class="form-group">
+                <label for="lyDo">Lý Do</label>
+                <textarea class="form-control" id="lyDo" name="lyDo" rows="3" required></textarea>
+            </div>
+            <button type="submit" class="btn-submit">Thêm</button>
+        </form>
+    </div>
+</div>
+
+<!-- View TTTV Modal -->
+<div id="viewTTTVModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeViewModal()">×</span>
+        <h2>Chi tiết Tạm trú/Tạm vắng</h2>
+        <div class="detail-container">
+            <div class="detail-section">
+                <h3>Thông tin Tạm trú/Tạm vắng</h3>
+                <div class="read-only-info">
+                    <p><strong>ID:</strong> <span id="view-id"></span></p>
+                    <p><strong>Loại:</strong> <span id="view-loai"></span></p>
+                    <p><strong>Ngày Bắt Đầu:</strong> <span id="view-ngayBatDau"></span></p>
+                    <p><strong>Ngày Kết Thúc:</strong> <span id="view-ngayKetThuc"></span></p>
+                    <p><strong>Lý Do:</strong> <span id="view-lyDo"></span></p>
+                </div>
+            </div>
+            
+            <div class="detail-section">
+                <h3>Thông tin Nhân Khẩu</h3>
+                <div class="read-only-info">
+                    <p><strong>Mã Nhân Khẩu:</strong> <span id="view-maNhanKhau"></span></p>
+                    <p><strong>Họ Tên:</strong> <span id="view-hoTen"></span></p>
+                    <p><strong>Mã Hộ Khẩu:</strong> <span id="view-maHoKhau"></span></p>
+                    <p><strong>Quan hệ với chủ hộ:</strong> <span id="view-qhVoiChuHo"></span></p>
+                    <p><strong>Ngày Sinh:</strong> <span id="view-ngaySinh"></span></p>
+                    <p><strong>Giới Tính:</strong> <span id="view-gioiTinh"></span></p>
+                    <p><strong>Quốc Tịch:</strong> <span id="view-quocTich"></span></p>
+                    <p><strong>Nơi Sinh:</strong> <span id="view-noiSinh"></span></p>
+                    <p><strong>CMND:</strong> <span id="view-cmnd"></span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit TTTV Modal -->
+<div id="editTTTVModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeEditModal()">×</span>
+        <h2>Chỉnh sửa Tạm trú/Tạm vắng</h2>
+        <form id="editTTTVForm">
+            <input type="hidden" id="edit-id" name="id">
+            
+            <div class="detail-section">
+                <h3>Thông tin Tạm trú/Tạm vắng</h3>
+                <div class="form-group">
+                    <label for="edit-loai">Loại</label>
+                    <select class="form-control" id="edit-loai" name="loai" required>
+                        <option value="Tạm trú">Tạm trú</option>
+                        <option value="Tạm vắng">Tạm vắng</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="edit-ngayBatDau">Ngày Bắt Đầu</label>
+                    <input type="date" class="form-control" id="edit-ngayBatDau" name="ngayBatDau" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-ngayKetThuc">Ngày Kết Thúc</label>
+                    <input type="date" class="form-control" id="edit-ngayKetThuc" name="ngayKetThuc" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-lyDo">Lý Do</label>
+                    <textarea class="form-control" id="edit-lyDo" name="lyDo" rows="3" required></textarea>
+                </div>
+            </div>
+
+            <div class="detail-section">
+                <h3>Thông tin Nhân Khẩu (Chỉ xem)</h3>
+                <div class="read-only-info">
+                    <p><strong>Mã Nhân Khẩu:</strong> <span id="edit-maNhanKhau"></span></p>
+                    <input type="hidden" id="edit-maNhanKhau-input" name="maNhanKhau">
+                    <p><strong>Họ Tên:</strong> <span id="edit-hoTen"></span></p>
+                    <p><strong>Mã Hộ Khẩu:</strong> <span id="edit-maHoKhau"></span></p>
+                    <p><strong>Quan hệ với chủ hộ:</strong> <span id="edit-qhVoiChuHo"></span></p>
+                    <p><strong>Ngày Sinh:</strong> <span id="edit-ngaySinh"></span></p>
+                    <p><strong>Giới Tính:</strong> <span id="edit-gioiTinh"></span></p>
+                    <p><strong>Quốc Tịch:</strong> <span id="edit-quocTich"></span></p>
+                    <p><strong>Nơi Sinh:</strong> <span id="edit-noiSinh"></span></p>
+                    <p><strong>CMND:</strong> <span id="edit-cmnd"></span></p>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-submit">Cập nhật</button>
+        </form>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteTTTVModal" class="modal">
+    <div class="modal-content delete-modal">
+        <span class="close" onclick="closeDeleteModal()">×</span>
+        <h2>Xác nhận xóa</h2>
+        <p>Bạn có chắc chắn muốn xóa thông tin tạm trú/tạm vắng này không?</p>
+        <div class="confirm-buttons">
+            <form id="deleteTTTVForm">
+                <input type="hidden" id="delete-id" name="id">
+                <button type="button" class="btn-cancel" onclick="closeDeleteModal()">Hủy</button>
+                <button type="submit" class="btn-delete">Xóa</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/tamtrutamvang.js') }}"></script>
+{% endblock %}

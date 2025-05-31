@@ -1,0 +1,151 @@
+
+{% extends "base.html" %}
+{% block title %}Quản lý khoản thu{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/khoanthu.css') }}">
+{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="header-row">
+        <h1 class="page-title">Quản lý khoản thu</h1>
+    </div>
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<div class="search-container">
+    <input type="text" id="searchInput" class="search-box" placeholder="Tìm kiếm ...">
+    <button class="add-button" onclick="openAddModal()">+ Thêm khoản thu</button>
+</div>
+
+<div class="card">
+    <table class="account-table">
+        <thead>
+            <tr>
+                <th>Mã khoản thu</th>
+                <th>Khoản thu</th>
+                <th>Loại</th>
+                <th>Số tiền</th>
+                <th>Đơn vị tiền tệ</th>
+                <th>Ghi chú</th>
+                <th>Người tạo</th>
+                <th class="action-column">Thao tác</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for khoanthu in khoanthus %}
+            <tr>
+                <td>{{ khoanthu.maKhoanThu }}</td>
+                <td>{{ khoanthu.tenKhoanThu }}</td>
+                <td>{{ khoanthu.loaiKhoanThu }}</td>
+                <td>{{ '{:,.0f}'.format(khoanthu.soTien) }}</td>
+                <td>{{ khoanthu.loaiSoTien }}</td>
+                <td>{{ khoanthu.ghiChu }}</td>
+                <td>{{ khoanthu.nguoiTao.hoTen if khoanthu.nguoiTao else "" }}</td>
+                <td class="action-column">
+                    <button class="action-button" onclick="editKhoanThu({{ khoanthu.maKhoanThu }})">
+                        <i class="fas fa-edit action-icon"></i>
+                    </button>
+                    <button class="action-button" onclick="deleteKhoanThu({{ khoanthu.maKhoanThu }})">
+                        <i class="fas fa-trash-alt action-icon"></i>
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+</div>
+<!-- Add KhoanThu Modal -->
+<div id="addKhoanThuModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeAddModal()">×</span>
+        <h2>Thêm khoản thu mới</h2>
+        <form id="addKhoanThuForm">
+            <div class="form-group">
+                <label for="tenKhoanThu">Tên khoản thu</label>
+                <input type="text" class="form-control" id="tenKhoanThu" name="tenKhoanThu" required>
+            </div>
+            <div class="form-group">
+                <label for="loaiKhoanThu">Loại khoản thu</label>
+                <select class="form-control" id="loaiKhoanThu" name="loaiKhoanThu" required>
+                    <option value="">-- Chọn loại --</option>
+                    <option value="Phí dịch vụ">Phí dịch vụ</option>
+                    <option value="Phí quản lý">Phí quản lý</option>
+                    <option value="Phí xe máy">Phí xe máy</option>
+                    <option value="Phí ô tô">Phí ô tô</option>
+                    <option value="Khác">Khác</option>
+                    <option value="Đóng góp">Đóng góp</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="soTien">Số tiền</label>
+                <input type="number" class="form-control" id="soTien" name="soTien" step="1000" min="0" required>
+            </div>
+            <div class="form-group">
+                <label for="loaiSoTien">Đơn vị tiền tệ</label>
+                <select class="form-control" id="loaiSoTien" name="loaiSoTien" required>
+                    <option value="VNĐ">VNĐ</option>
+                    <option value="USD">USD</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="ghiChu">Ghi chú</label>
+                <input type="text" class="form-control" id="ghiChu" name="ghiChu" placeholder="Ví dụ: /m2">
+            </div>
+            <button type="submit" class="btn-submit">Thêm khoản thu</button>
+        </form>
+    </div>
+</div>
+<!-- Edit KhoanThu Modal -->
+<div id="editKhoanThuModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeEditModal()">×</span>
+        <h2>Chỉnh sửa khoản thu</h2>
+        <form id="editKhoanThuForm">
+            <input type="hidden" id="editMaKhoanThu" name="maKhoanThu">
+            <div class="form-group">
+                <label for="editTenKhoanThu">Tên khoản thu</label>
+                <input type="text" class="form-control" id="editTenKhoanThu" name="tenKhoanThu" required>
+            </div>
+            <div class="form-group">
+                <label for="editLoaiKhoanThu">Loại khoản thu</label>
+                <select class="form-control" id="editLoaiKhoanThu" name="loaiKhoanThu" required>
+                    <option value="">-- Chọn loại --</option>
+                    <option value="Phí dịch vụ">Phí dịch vụ</option>
+                    <option value="Phí quản lý">Phí quản lý</option>
+                    <option value="Phí xe máy">Phí xe máy</option>
+                    <option value="Phí ô tô">Phí ô tô</option>
+                    <option value="Khác">Khác</option>
+                    <option value="Đóng góp">Đóng góp</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="editSoTien">Số tiền</label>
+                <input type="number" class="form-control" id="editSoTien" name="soTien" step="1000" min="0" required>
+            </div>
+            <div class="form-group">
+                <label for="editLoaiSoTien">Đơn vị tiền tệ</label>
+                <select class="form-control" id="editLoaiSoTien" name="loaiSoTien" required>
+                    <option value="VNĐ">VNĐ</option>
+                    <option value="USD">USD</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="editGhiChu">Ghi chú</label>
+                <input type="text" class="form-control" id="editGhiChu" name="ghiChu" placeholder="Ví dụ: /m2">
+            </div>
+            <button type="submit" class="btn-submit">Cập nhật khoản thu</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/khoanthu.js') }}"></script>
+{% endblock %}

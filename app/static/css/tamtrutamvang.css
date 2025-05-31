@@ -1,0 +1,39 @@
+/* CSS bổ sung cho phần thông tin chỉ xem */
+.read-only-info p {
+    margin: 8px 0;
+    padding: 5px 0;
+    font-size: 14px;
+}
+
+.read-only-info strong {
+    display: inline-block;
+    min-width: 150px;
+    color: #555;
+}
+
+.read-only-info span {
+    font-weight: bold;
+    color: #333;
+}
+
+/* Optional: Thêm đường phân cách nhẹ giữa các mục */
+.read-only-info p:not(:last-child) {
+    border-bottom: 1px dotted #eee;
+}
+
+/* Làm nổi bật section chỉ xem */
+.detail-section:last-of-type {
+    background-color: #f9f9f9;
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+}
+
+/* Điều chỉnh kích thước tiêu đề h3 */
+.detail-section h3 {
+    font-size: 16px;
+    margin-bottom: 15px;
+    color: #444;
+    border-bottom: 2px solid #ddd;
+    padding-bottom: 8px;
+}

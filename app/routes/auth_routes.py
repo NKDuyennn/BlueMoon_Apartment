@@ -268,23 +268,27 @@ def export_ke_toan_report():
             'rows': [
                 ['2025-01', 'Đợt thu tháng 1', '2'],
                 ['2025-02', 'Đợt thu tháng 2', '3'],
-                ['2025-03', 'Đợt thu tháng 3', '1']
+                ['2025-03', 'Đợt thu tháng 3', '1'],
+                ['2025-04', 'Đợt thu tháng 4', '2'],
+                ['2025-05', 'Đợt thu tháng 5', '2']
             ]
         }, ['Tháng', 'Mô Tả', 'Số Đợt'])
 
         draw_table({
             'title': 'Số Tiền Thu Theo Tháng',
             'rows': [
-                ['2025-01', 'Tiền thu tháng 1', '25.000.000'],
-                ['2025-02', 'Tiền thu tháng 2', '30.000.000'],
-                ['2025-03', 'Tiền thu tháng 3', '15.000.000']
+                ['2025-01', 'Tiền thu tháng 1', '28.000.000'],
+                ['2025-02', 'Tiền thu tháng 2', '26.000.000'],
+                ['2025-03', 'Tiền thu tháng 3', '29.000.000'],
+                ['2025-04', 'Tiền thu tháng 4', '27.000.000'],
+                ['2025-05', 'Tiền thu tháng 5', '7.470.000']
             ]
         }, ['Tháng', 'Mô Tả', 'Số Tiền (VND)'])
 
         draw_table({
             'title': 'Thống Kê Tài Chính',
             'rows': [
-                ['Tổng thu nhập', 'Tổng số tiền thu được', '70.000.000'],
+                ['Tổng thu nhập', 'Tổng số tiền thu được', '117.470.000'],
                 ['Tỷ lệ thu', 'Phần trăm hộ đã đóng', '85%'],
                 ['Hộ chưa đóng', 'Số hộ chưa nộp phí', '18']
             ]
@@ -293,11 +297,11 @@ def export_ke_toan_report():
         draw_table({
             'title': 'Thu Chi Theo Tháng',
             'rows': [
-                ['T1', 'Tháng 1', '25', '5'],
-                ['T2', 'Tháng 2', '30', '8'],
-                ['T3', 'Tháng 3', '15', '3'],
-                ['T4', 'Tháng 4', '28', '6'],
-                ['T5', 'Tháng 5', '32', '7'],
+                ['T1', 'Tháng 1', '28', '5'],
+                ['T2', 'Tháng 2', '26', '8'],
+                ['T3', 'Tháng 3', '29', '3'],
+                ['T4', 'Tháng 4', '27', '6'],
+                ['T5', 'Tháng 5', '7.47', '7'],
                 ['T6', 'Tháng 6', '27', '4'],
                 ['T7', 'Tháng 7', '24', '5'],
                 ['T8', 'Tháng 8', '29', '6'],

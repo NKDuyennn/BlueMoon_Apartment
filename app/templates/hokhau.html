@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block title %}Quản lý hộ khẩu{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="/static/css/hokhau.css">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Quản lý hộ khẩu</h1>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    {% if current_user.vaiTro == 'admin' %}
+    <div class="search-container">
+        <input type="text" id="searchInput" class="search-box" placeholder="Tìm kiếm ...">
+        <button class="add-button" onclick="openAddModal()">+ Thêm hộ khẩu</button>
+    </div>
+    {% endif %}
+
+    <!-- Phần bảng dữ liệu -->
+    <div class="card">
+        <table class="account-table">
+            <thead>
+                <tr>
+                    <th>Mã Hộ Khẩu</th>
+                    <th>Chủ Hộ</th>
+                    <th>Số nhà</th>
+                    <th>Diện tích</th>
+                    <th>Ngày tạo</th>
+                    <th>Ngày cập nhật</th>
+                    <th class="action-column">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody id="hokhau-table-body">
+                {% for hokhau in hokhaus %}
+                <tr class="hokhau-row" data-index="{{ loop.index0 }}">
+                    <td>{{ hokhau.maHoKhau }}</td>
+                    <td>
+                        {% if hokhau.chuHo == 0 %}
+                            BlueMoon
+                        {% else %}
+                            {% for nhankhau in nhankhaus %}
+                                {% if nhankhau.maNhanKhau == hokhau.chuHo %}
+                                    {{ nhankhau.hoTen }}
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                    </td>
+                    <td>{{ hokhau.soNha }}</td>
+                    <td>{{ hokhau.dienTich }}</td>
+                    <td>{{ hokhau.ngayLap }}</td>
+                    <td>{{ hokhau.ngayCapNhat }}</td>
+                    <td class="action-column">
+                        <a href="{{ url_for('hk.hokhau_chitiet', maHoKhau=hokhau.maHoKhau) }}" class="action-button">
+                            Chi tiết
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <!-- Phần phân trang -->
+        <div class="pagination-container">
+            <div class="pagination-info">
+                Hiển thị <span id="start-record">1</span> đến <span id="end-record">10</span> trong tổng số <span id="total-records">{{ hokhaus|length }}</span> bản ghi
+            </div>
+            <div class="pagination-controls">
+                <button id="prev-page" class="pagination-button" disabled>&laquo; Trước</button>
+                <div id="page-numbers" class="page-numbers">
+                    <!-- Số trang sẽ được tạo bằng JavaScript -->
+                </div>
+                <button id="next-page" class="pagination-button">Sau &raquo;</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Account Modal -->
+<div id="addHoKhauModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeAddModal()">×</span>
+        <h2>Thêm hộ khẩu mới</h2>
+        <form id="addHoKhauForm">
+            <div class="form-group">
+                <label for="soNha">Số nhà</label>
+                <input type="text" class="form-control" id="soNha" name="soNha" required>
+            </div>
+            <div class="form-group">
+                <label for="ngayLap">Ngày lập</label>
+                <input type="date" class="form-control" id="ngayLap_display" value="" disabled>
+                <input type="hidden" id="ngayLap" name="ngayLap">
+            </div>
+            <div class="form-group">
+                <label for="ngayCapNhat">Ngày cập nhật</label>
+                <input type="date" class="form-control" id="ngayCapNhat_display" value="" disabled>
+                <input type="hidden" id="ngayCapNhat" name="ngayCapNhat">
+            </div>
+            <div class="form-group">
+                <label for="dienTich">Diện tích (m²)</label>
+                <input type="number" step="0.01" class="form-control" id="dienTich" name="dienTich" required>
+            </div>
+            <div class="form-group">
+                <label for="xeMay">Số xe máy</label>
+                <input type="number" min="0" class="form-control" id="xeMay" name="xeMay" value="0">
+            </div>
+            <div class="form-group">
+                <label for="oTo">Số ô tô</label>
+                <input type="number" min="0" class="form-control" id="oTo" name="oTo" value="0">
+            </div>
+            <div class="form-group">
+                <label for="chuHo">Chủ hộ</label>
+                <!-- Hiển thị "BlueMoon" cho người dùng xem -->
+                <input type="text" class="form-control" value="BlueMoon" disabled>
+                <!-- Gửi giá trị 0 về server -->
+                <input type="hidden" id="chuHo" name="chuHo" value="0">
+            </div>
+            <button type="submit" class="btn-submit">Thêm hộ khẩu</button>
+        </form>
+    </div>
+</div>
+
+
+{% endblock %}
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/hokhau.js') }}"></script>
+{% endblock %}

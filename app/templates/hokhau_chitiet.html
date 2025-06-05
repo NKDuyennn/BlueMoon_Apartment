@@ -1,0 +1,373 @@
+{% extends "base.html" %}
+{% block title %}Chi tiết hộ khẩu - Mã {{ hokhau.maHoKhau }}{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="/static/css/hokhau.css">
+<link rel="stylesheet" href="/static/css/nhankhau.css">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Chi tiết hộ khẩu - Mã {{ hokhau.maHoKhau }}</h1>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="card">
+        <div class="card-header">
+            <h2>Thông tin hộ khẩu</h2>
+        </div>
+        <div class="card-body info-grid">
+            <div class="info-column">
+                <p><strong>Mã hộ khẩu:</strong> {{ hokhau.maHoKhau }}</p>
+                <p><strong>Chủ hộ:</strong> 
+                    {% if hokhau.chuHo == 0 %}
+                        BlueMoon
+                    {% else %}
+                        {{ chu_ho if chu_ho else 'Không xác định' }}
+                    {% endif %}
+                </p>
+                <p><strong>Số nhà:</strong> {{ hokhau.soNha }}</p>
+            </div>
+            <div class="info-column">
+                <p><strong>Diện tích:</strong> {{ hokhau.dienTich }} m²</p>
+                <p><strong>Số xe máy:</strong> {{ hokhau.xeMay }}</p>
+                <p><strong>Số ô tô:</strong> {{ hokhau.oTo }}</p>
+            </div>
+            <div class="info-column">
+                <p><strong>Ngày lập:</strong> {{ hokhau.ngayLap }}</p>
+                <p><strong>Ngày cập nhật:</strong> {{ hokhau.ngayCapNhat }}</p>
+            </div>
+            
+            <div class="info-column text-right">
+                {% if current_user.vaiTro == 'admin' %}
+                <div class="action-buttons-vertical">
+                    <button class="btn-edit" onclick="openHoKhauEditModal()">Chỉnh sửa</button>
+                    <button class="btn-delete" onclick="deleteHoKhau({{ hokhau.maHoKhau }})">Xóa</button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="card mt-4">
+        <div class="card-header">
+            <div class="header-row">
+                <h2>Danh sách nhân khẩu</h2>
+                <div class="search-container">
+                    <input type="text" id="searchMembers" class="search-box" placeholder="Tìm kiếm nhân khẩu...">
+                    {% if current_user.vaiTro == 'admin' %}
+                        <button class="add-button" onclick="openCreateNhanKhauModal()">+ Thêm nhân khẩu</button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <table class="account-table">
+                <thead>
+                    <tr>
+                        <th>Mã nhân khẩu</th>
+                        <th>Họ tên</th>
+                        <th>Giới tính</th>
+                        <th>Ngày sinh</th>
+                        <th>Quốc tịch</th>
+                        <th>Trạng thái</th>
+                        {% if current_user.vaiTro == 'admin' %}
+                        <th class="action-column">Hành động</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for nk in nhankhaus %}
+                        {% if nk.maHoKhau == hokhau.maHoKhau %}
+                            <tr class="hokhau-row visible">
+                                <td>{{ nk.maNhanKhau }}</td>
+                                <td>{{ nk.hoTen }}</td>
+                                <td>{{ nk.gioiTinh }}</td>
+                                <td>{{ nk.ngaySinh.strftime('%d/%m/%Y') }}</td>
+                                <td>{{ nk.quocTich }}</td>
+                                <td>{{ nk.trangThai }}</td>
+                                {% if current_user.vaiTro == 'admin' %}
+                                <td class="action-column">
+                                    <a href="#" class="action-button" onclick="openViewModal('{{ nk.maNhanKhau }}'); return false;">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="#" class="action-button" onclick="openNhanKhauEditModal('{{ nk.maNhanKhau }}'); return false;">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="#" class="action-button" onclick="openDeleteModal('{{ nk.maNhanKhau }}', '{{ nk.hoTen }}'); return false;">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </td>
+                                {% endif %}
+                            </tr>
+                        {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+</div>
+
+<!-- Confirm Delete Modal -->
+<div id="confirmDeleteModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeConfirmDeleteModal()">×</span>
+        <h2>Xác nhận xóa</h2>
+        <p>Bạn có chắc chắn muốn xóa hộ khẩu này không?</p>
+        <div class="modal-buttons">
+            <button class="btn-cancel" onclick="closeConfirmDeleteModal()">Hủy</button>
+            <button class="btn-delete" id="confirmDeleteBtn">Xóa</button>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+{% if current_user.vaiTro == 'admin' %}
+<div id="editHoKhauModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeHoKhauEditModal()">×</span>
+        <h2>Chỉnh sửa thông tin hộ khẩu</h2>
+        <form id="editHoKhauForm">
+            <input type="hidden" id="editMaHoKhau" name="maHoKhau" value="{{ hokhau.maHoKhau }}">
+            <div class="form-group">
+                <label for="editSoNha">Số nhà</label>
+                <input type="text" class="form-control" id="editSoNha" name="soNha" value="{{ hokhau.soNha }}" required>
+            </div>
+            <div class="form-group">
+                <label for="ngayLap_display">Ngày lập</label>
+                <input type="date" class="form-control" id="ngayLap_display" value="{{ hokhau.ngayLap.strftime('%Y-%m-%d') }}" disabled>
+                <input type="hidden" id="ngayLap" name="ngayLap" value="{{ hokhau.ngayLap.strftime('%Y-%m-%d') }}">
+            </div>
+            <div class="form-group">
+                <label for="ngayCapNhat_display">Ngày cập nhật</label>
+                <input type="date" class="form-control" id="ngayCapNhat_display" value="" disabled>
+                <input type="hidden" id="ngayCapNhat" name="ngayCapNhat">
+            </div>
+            <div class="form-group">
+                <label for="editDienTich">Diện tích (m²)</label>
+                <input type="number" step="0.01" class="form-control" id="editDienTich" name="dienTich" value="{{ hokhau.dienTich }}" required>
+            </div>
+            <div class="form-group">
+                <label for="editXeMay">Số xe máy</label>
+                <input type="number" min="0" class="form-control" id="editXeMay" name="xeMay" value="{{ hokhau.xeMay }}">
+            </div>
+            <div class="form-group">
+                <label for="editOTo">Số ô tô</label>
+                <input type="number" min="0" class="form-control" id="editOTo" name="oTo" value="{{ hokhau.oTo }}">
+            </div>
+            <div class="form-group">
+                <label for="editChuHo">Chủ hộ</label>
+                <select class="form-control" id="editChuHo" name="chuHo" required>
+                    <option value="0" {% if hokhau.chuHo == 0 %}selected{% endif %}>0: BlueMoon</option>
+                    {% for nk in nhankhaus %}
+                        {% if nk.maHoKhau == hokhau.maHoKhau %}
+                            <option value="{{ nk.maNhanKhau }}" {% if hokhau.chuHo == nk.maNhanKhau %}selected{% endif %}>
+                                {{ nk.maNhanKhau }}: {{ nk.hoTen }}
+                            </option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn-submit">Lưu thay đổi</button>
+        </form>
+    </div>
+</div>
+
+<!-- Create NhanKhau Modal -->
+<div id="createNhanKhauModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeCreateNhanKhauModal()">×</span>
+        <h2>Thêm nhân khẩu mới</h2>
+        <form id="createNhanKhauForm">
+            <input type="hidden" id="createMaHoKhau" name="maHoKhau" value="{{ hokhau.maHoKhau }}">
+
+            <div class="form-group">
+                <label for="hoTen">Họ tên <span class="required">*</span></label>
+                <input type="text" class="form-control" id="hoTen" name="hoTen" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="ngaySinh">Ngày sinh <span class="required">*</span></label>
+                <input type="date" class="form-control" id="ngaySinh" name="ngaySinh" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="gioiTinh">Giới tính <span class="required">*</span></label>
+                <select class="form-control" id="gioiTinh" name="gioiTinh" required>
+                    <option value="Nam">Nam</option>
+                    <option value="Nữ">Nữ</option>
+                    <option value="Khác">Khác</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="quocTich">Quốc tịch</label>
+                <input type="text" class="form-control" id="quocTich" name="quocTich" value="Việt Nam">
+            </div>
+            
+            <div class="form-group">
+                <label for="noiSinh">Nơi sinh</label>
+                <input type="text" class="form-control" id="noiSinh" name="noiSinh">
+            </div>
+            
+            <div class="form-group">
+                <label for="cmnd">CMND/CCCD</label>
+                <input type="text" class="form-control" id="cmnd" name="cmnd">
+            </div>
+            
+            <div class="form-group">
+                <label for="qhVoiChuHo">Quan hệ với chủ hộ</label>
+                <select class="form-control" id="qhVoiChuHo" name="qhVoiChuHo">
+                    <option value="">-- Chọn quan hệ --</option>
+                    <option value="Chủ hộ">Chủ hộ</option>
+                    <option value="Vợ">Vợ</option>
+                    <option value="Chồng">Chồng</option>
+                    <option value="Con">Con</option>
+                    <option value="Cha">Cha</option>
+                    <option value="Mẹ">Mẹ</option>
+                    <option value="Ông">Ông</option>
+                    <option value="Bà">Bà</option>
+                    <option value="Cháu">Cháu</option>
+                    <option value="Khác">Khác</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="trangThai">Trạng thái</label>
+                <select class="form-control" id="trangThai" name="trangThai" required>
+                    <option value="Thường trú">Thường trú</option>
+                </select>
+            </div>
+            
+            <button type="submit" class="btn-submit">Lưu thông tin</button>
+        </form>
+    </div>
+</div>
+
+<!-- View Nhân khẩu Modal -->
+<div id="viewNhanKhauModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeViewModal()">×</span>
+        <h2>Thông tin nhân khẩu</h2>
+        <div id="nhanKhauInfo">
+            <div class="form-group">
+                <label>Mã nhân khẩu:</label>
+                <p id="viewMaNhanKhau"></p>
+            </div>
+            <div class="form-group">
+                <label>Họ tên:</label>
+                <p id="viewHoTen"></p>
+            </div>
+            <div class="form-group">
+                <label>Ngày sinh:</label>
+                <p id="viewNgaySinh"></p>
+            </div>
+            <div class="form-group">
+                <label>Giới tính:</label>
+                <p id="viewGioiTinh"></p>
+            </div>
+            <div class="form-group">
+                <label>CMND/CCCD:</label>
+                <p id="viewCMND"></p>
+            </div>
+            <div class="form-group">
+                <label>Quê quán:</label>
+                <p id="viewQueQuan"></p>
+            </div>
+            <div class="form-group">
+                <label>Mã hộ khẩu:</label>
+                <p id="viewMaHoKhau"></p>
+            </div>
+            <div class="form-group">
+                <label>Quan hệ với chủ hộ:</label>
+                <p id="viewQuanHeChuHo"></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Nhân khẩu Modal -->
+<div id="editNhanKhauModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeNhanKhauEditModal()">×</span>
+        <h2>Chỉnh sửa thông tin nhân khẩu</h2>
+        <form id="editNhanKhauForm">
+            <input type="hidden" id="editMaNhanKhau" name="maNhanKhau">
+            <div class="form-group">
+                <label for="editHoTen">Họ tên</label>
+                <input type="text" class="form-control" id="editHoTen" name="hoTen" required>
+            </div>
+            <div class="form-group">
+                <label for="editNgaySinh">Ngày sinh</label>
+                <input type="date" class="form-control" id="editNgaySinh" name="ngaySinh" required>
+            </div>
+            <div class="form-group">
+                <label for="editGioiTinh">Giới tính</label>
+                <select class="form-control" id="editGioiTinh" name="gioiTinh" required>
+                    <option value="Nam">Nam</option>
+                    <option value="Nữ">Nữ</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="editCMND">CMND/CCCD</label>
+                <input type="text" class="form-control" id="editCMND" name="cmnd" required>
+            </div>
+            <div class="form-group">
+                <label for="editQueQuan">Quê quán</label>
+                <input type="text" class="form-control" id="editQueQuan" name="queQuan" required>
+            </div>
+            <div class="form-group">
+                <label for="editMaHoKhau0">Mã hộ khẩu</label>
+                <input type="number" class="form-control" id="editMaHoKhau0" name="maHoKhau" required>
+            </div>
+            <div class="form-group">
+                <label for="editQuanHeChuHo">Quan hệ với chủ hộ</label>
+                <select class="form-control" id="editQuanHeChuHo" name="quanHeChuHo">
+                    <option value="">-- Chọn quan hệ --</option>
+                    <option value="Chủ hộ">Chủ hộ</option>
+                    <option value="Vợ">Vợ</option>
+                    <option value="Chồng">Chồng</option>
+                    <option value="Con">Con</option>
+                    <option value="Cha">Cha</option>
+                    <option value="Mẹ">Mẹ</option>
+                    <option value="Ông">Ông</option>
+                    <option value="Bà">Bà</option>
+                    <option value="Cháu">Cháu</option>
+                    <option value="Khác">Khác</option>
+                </select>
+            </div>
+            <button type="submit" class="btn-submit">Cập nhật</button>
+        </form>
+    </div>
+</div>
+
+<!-- Delete Nhân khẩu Confirmation Modal -->
+<div id="deleteNhanKhauModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeDeleteModal()">×</span>
+        <h2>Xác nhận xóa nhân khẩu</h2>
+        <p>Bạn có chắc chắn muốn xóa nhân khẩu <span id="deleteNhanKhauName"></span>?</p>
+        <input type="hidden" id="deleteNhanKhauId">
+        <div class="button-group">
+            <button class="btn-cancel" onclick="closeDeleteModal()">Hủy</button>
+            <button class="btn-delete" onclick="confirmDeleteNhanKhau()">Xóa</button>
+        </div>
+    </div>
+</div>
+
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/hokhau.js') }}"></script>
+<script src="{{ url_for('static', filename='js/nhankhau.js') }}"></script>
+{% endblock %}

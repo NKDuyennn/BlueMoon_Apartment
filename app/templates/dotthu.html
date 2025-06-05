@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Quản lý đợt thu{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="/static/css/dotthu.css">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Quản lý đợt thu</h1>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    
+    <div class="search-container">
+        <input type="text" id="searchInput" class="search-box" placeholder="Tìm kiếm ...">
+        <button class="add-button" onclick="openAddModal()">+ Thêm đợt thu</button>
+    </div>
+
+
+    <!-- Phần bảng dữ liệu -->
+    <div class="card">
+        <table class="account-table">
+            <thead>
+                <tr>
+                    <th>Mã đợt thu</th>
+                    <th>Tên đợt thu</th>
+                    <th>Ngày bắt đầu</th>
+                    <th>Ngày kết thúc</th>
+                    <th>Trạng thái</th>
+                    <th class="action-column">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody id="dotthu-table-body">
+                {% for dotthu in dotthus %}
+                <tr class="dotthu-row" data-index="{{ loop.index0 }}">
+                    <td>{{ dotthu.maDotThu }}</td>
+                    <td>{{ dotthu.tenDotThu }}</td>
+                    <td>{{ dotthu.ngayBatDau }}</td>
+                    <td>{{ dotthu.ngayKetThuc }}</td>
+                    <td>{{ dotthu.trangThai }}</td>
+                    <td class="action-column">
+                        <a href="{{ url_for('tp.dotthu_chitiet', maDotThu=dotthu.maDotThu) }}" class="action-button">
+                            Chi tiết
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <!-- Phần phân trang -->
+        <div class="pagination-container">
+            <div class="pagination-info">
+                Hiển thị <span id="start-record">1</span> đến <span id="end-record">10</span> trong tổng số <span id="total-records">{{ dotthus|length }}</span> bản ghi
+            </div>
+            <div class="pagination-controls">
+                <button id="prev-page" class="pagination-button" disabled>&laquo; Trước</button>
+                <div id="page-numbers" class="page-numbers">
+                    <!-- Số trang sẽ được tạo bằng JavaScript -->
+                </div>
+                <button id="next-page" class="pagination-button">Sau &raquo;</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add DotThu Modal -->
+<div id="addDotThuModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeAddModal()">×</span>
+        <h2>Thêm đợt thu mới</h2>
+        <form id="addDotThuForm">
+            <div class="form-group">
+                <label for="tenDotThu">Tên đợt thu</label>
+                <input type="text" class="form-control" id="tenDotThu" name="tenDotThu" required>
+            </div>
+            <div class="form-group">
+                <label for="ngayBatDau">Ngày bắt đầu</label>
+                <input type="date" class="form-control" id="ngayBatDau" name="ngayBatDau" required>
+            </div>
+            <div class="form-group">
+                <label for="ngayKetThuc">Ngày kết thúc</label>
+                <input type="date" class="form-control" id="ngayKetThuc" name="ngayKetThuc" required>
+            </div>
+            <div class="form-group">
+                <label for="trangThai">Trạng thái</label>
+                <select class="form-control" id="trangThai" name="trangThai">
+                    <option value="Đang thực hiện">Đang thực hiện</option>
+                    <option value="Đã hoàn thành">Đã hoàn thành</option>
+                    <option value="Tạm dừng">Tạm dừng</option>
+                </select>
+            </div>
+            <button type="submit" class="btn-submit">Thêm đợt thu</button>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/dotthu.js') }}"></script>
+{% endblock %}

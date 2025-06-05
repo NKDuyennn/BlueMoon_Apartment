@@ -505,8 +505,9 @@ class NopPhiService:
             (extract('month', NopPhi.ngayThu) == month)                 
         ).scalar()
         return round(total or 0,0)
+    
     @staticmethod
-    def tylethuhientai(year,month):
+    def tylethuhientai(year, month):
         danop = db.session.query(NopPhi).filter(
             (NopPhi.soTienCanNop - NopPhi.soTienDaNop == 0),
             (extract('year', NopPhi.ngayThu) == year),
@@ -516,8 +517,15 @@ class NopPhiService:
             (extract('year', NopPhi.ngayThu) == year),
             (extract('month', NopPhi.ngayThu) == month)                
         ).count()
-        hochuadong = phainop-danop
-        return round(danop*100/phainop or 0.00, 2),hochuadong
+        
+        # Xử lý trường hợp phainop = 0 để tránh chia cho 0
+        if phainop == 0:
+            return 0.0, 0
+        
+        hochuadong = phainop - danop
+        ty_le = round(danop * 100 / phainop, 2)
+        
+        return ty_le, hochuadong
 
     @staticmethod
     def doanhthutheothang(year,month):

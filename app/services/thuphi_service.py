@@ -534,3 +534,11 @@ class NopPhiService:
                 (extract('month', NopPhi.ngayThu) == month)            
         ).scalar()
         return sotien if sotien is not None else 0
+    
+class ThuphiService:
+    @staticmethod
+    def get_stats():
+        return {
+            'total_thuphi': 100,
+            'pending_thuphi': 10
+        }

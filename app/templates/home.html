@@ -384,6 +384,24 @@
         font-style: italic;
         padding: 10px;
     }
+
+    /* Export Button */
+    .export-btn {
+        background: #fdcb6e;
+        color: #2d3436;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-bottom: 20px;
+    }
+
+    .export-btn:hover {
+        background: #e1b053;
+        transform: translateY(-2px);
+    }
 </style>
 {% endblock %}
 
@@ -716,8 +734,8 @@
 
     {% elif current_user.vaiTro == 'Kế toán' %}
         <!-- Kế toán Dashboard -->
+        <button class="export-btn" onclick="window.location.href='/export_ke_toan_report'">Xuất Báo Cáo Tài Chính</button>
         <div class="ke-toan-grid">
-
             <div class="ke-toan-card">
                 <h3>Số đợt thu theo 4 tháng gần nhất</h3>
                 <ul>
@@ -972,18 +990,18 @@
                 new Chart(keToanCtx.getContext('2d'), {
                     type: 'bar',
                     data: {
-                        labels: ['T1', 'T2', 'T3', 'T4'],
+                        labels: ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'],
                         datasets: [
                             {
                                 label: 'Thu nhập (triệu VND)',
-                                data: [28,26,29,27],
+                                data: [28, 26, 29, 27, 7.47, 27, 24, 29, 31, 26, 28, 30],
                                 backgroundColor: '#00b894',
                                 borderColor: '#00b894',
                                 borderWidth: 1
                             },
                             {
                                 label: 'Chi phí (triệu VND)',
-                                data: [5, 8, 3, 6],
+                                data: [5, 8, 3, 6, 7, 4, 5, 6, 8, 4, 5, 7],
                                 backgroundColor: '#e17055',
                                 borderColor: '#e17055',
                                 borderWidth: 1

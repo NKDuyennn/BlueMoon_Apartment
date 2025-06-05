@@ -517,7 +517,7 @@ class NopPhiService:
             (extract('month', NopPhi.ngayThu) == month)                
         ).count()
         hochuadong = phainop-danop
-        return round(danop*100/phainop or 0.00, 2),hochuadong
+        return 0.00 if phainop == 0 else round(danop*100/phainop, 2),hochuadong
 
     @staticmethod
     def doanhthutheothang(year,month):
